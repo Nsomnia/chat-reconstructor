@@ -1,0 +1,24 @@
+[package]
+name = "vibestream"
+version = "0.1.0"
+edition = "2021"
+authors = ["VibeStream Team"]
+description = "Audio player with projectM visualization"
+
+[dependencies]
+sdl2 = "0.35"
+egui = "0.22"
+egui_sdl2_gl = "0.31"
+projectm = { git = "https://github.com/projectM-visualizer/projectm-rust", branch = "main" }
+rodio = "0.17"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+dirs = "5.0"
+rand = "0.8"
+anyhow = "1.0"
+log = "0.4"
+env_logger = "0.10"
+id3 = "1.7"
+rusttype = "0.9"
+gl = "0.14"
+rfd = "0.11"

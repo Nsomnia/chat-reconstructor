@@ -38,7 +38,7 @@ fn main() {
     println!("{}", "--- Commencing Agentic Synchronization ---".purple().bold());
 
     let assistant_turns = parser::extract_assistant_turns(&transcript);
-    if assistant_messages.is_empty() {
+    if assistant_turns.is_empty() {
         println!("{}", "No assistant messages found. Was it all just talk?".yellow());
         return;
     }

@@ -1,4 +1,5 @@
 use crate::parser::FileOperation;
+use diff_match_patch_rs::{DiffMatchPatch, Compat};
 use std::fs;
 use std::path::Path;
 use colored::*;
@@ -24,9 +25,9 @@ pub fn synchronize_files_to_disk(base_dir: &Path, operations: &[FileOperation]) 
             println!("    {} {} Applying intelligent update to {}", "🔧".yellow(), "[PATCHING]".yellow().bold(), op.path.display().to_string().bold());
             let current_content = fs::read_to_string(&full_path).unwrap_or_default();
             let new_content = if op.path.ends_with("Cargo.toml") {
-                apply_toml_patch(¤t_content, &op.content)
+                apply_toml_patch(&current_content, &op.content)
             } else {
-                apply_generic_patch(¤t_content, &op.content)
+                apply_generic_patch(&current_content, &op.content)
             };
             fs::write(&full_path, new_content).unwrap();
         } else {
@@ -61,20 +62,55 @@ fn apply_toml_patch(current: &str, patch: &str) -> String {
             }
         }
     }
-    toml::to_string_pretty(¤t_toml).unwrap()
+    toml::to_string_pretty(&current_toml).unwrap()
 }
 
+// Applies a patch to a file.
+// It first tries to parse the patch as a standard diff format.
+// If that fails, it falls back to a simple snippet replacement.
 fn apply_generic_patch(current: &str, patch: &str) -> String {
-    let dmp = diffmatchpatch::DiffMatchPatch::new();
+    let dmp = DiffMatchPatch::new();
     let clean_snippet = patch.replace("...", "");
-    let patches = dmp.patch_make(current, &clean_snippet);
-    let (new_text, results) = dmp.patch_apply(&patches, current);
-    
-    if results.iter().all(|&r| r) {
-        println!("      -> {} Fuzzy matched and merged changes.", "[PATCH APPLIED]".green());
-    } else {
-        println!("      -> {} Could not apply patch. File left unmodified.", "[PATCH FAILED]".yellow());
-        return current.to_string();
+
+    // The diff-match-patch-rs crate expects a patch format that can be parsed.
+    // We'll try to parse the snippet as a patch first.
+    match dmp.patch_from_text::<Compat>(&clean_snippet) {
+        Ok(patches) => {
+            // If the patch is successfully parsed, we apply it.
+            match dmp.patch_apply(&patches, current) {
+                Ok((new_text, results)) => {
+                    if results.iter().all(|r| *r) {
+                        println!("      -> {} Fuzzy matched and merged changes.", "[PATCH APPLIED]".green());
+                        return new_text;
+                    } else {
+                        println!("      -> {} Could not apply patch. File left unmodified.", "[PATCH FAILED]".yellow());
+                        return current.to_string();
+                    }
+                }
+                Err(_) => {
+                    println!("      -> {} Error applying patch. File left unmodified.", "[PATCH FAILED]".yellow());
+                    return current.to_string();
+                }
+            }
+        }
+        Err(_) => {
+            // If parsing fails, we assume it's a raw code snippet with "..." as a separator.
+            // This is a fallback and might not be robust, but it's better than nothing.
+            println!("      -> {} Could not parse patch. Trying to apply as a snippet.", "[INFO]".yellow());
+            let parts: Vec<&str> = patch.split("...").collect();
+            if parts.len() == 2 {
+                // We assume the first part is the prefix and the second part is the suffix.
+                if let (Some(start), Some(end)) = (current.find(parts[0]), current.rfind(parts[1])) {
+                    let mut new_content = String::new();
+                    new_content.push_str(&current[..start]);
+                    new_content.push_str(&clean_snippet);
+                    new_content.push_str(&current[end + parts[1].len()..]);
+                    println!("      -> {} Applied patch as a snippet.", "[SNIPPET APPLIED]".green());
+                    return new_content;
+                }
+            }
+            println!("      -> {} Could not apply patch as a snippet. File left unmodified.", "[SNIPPET FAILED]".yellow());
+            current.to_string()
+        }
     }
-    new_text
 }

@@ -9,5 +9,6 @@ description = "A Rust-powered agentic tool to reconstruct a project from an LLM 
 clap = { version = "4.5.4", features = ["derive"] }
 pulldown-cmark = "0.11.0"
 toml = "0.8.12"
-diffmatchpatch = "0.1.1"
+diff-match-patch-rs = "0.5.1"
 colored = "2.1.0"
+regex = "1.10.4"
