@@ -36,7 +36,14 @@ It doesn't just dumbly extract code. It thinks like a developer:
 
 ## Installation & Build
 
-You'll need the Rust toolchain installed.
+### Prerequisites
+
+You'll need the Rust toolchain installed. If you don't have it, you can install it with `rustup`:
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+```
+
+### Building
 
 1.  **Clone the Repository:**
     ```bash
@@ -67,14 +74,33 @@ Run the tool from your terminal, pointing it at your glorious, multi-line `.txt`
 
 The tool will process the entire chat log turn-by-turn and build the project in the specified output directory.
 
+### Example with Test Data
+
+You can test the tool with the sample chat log provided in the `tests` directory.
+
+1.  **Download the test data:**
+    ```bash
+    wget -O test_data.txt https://raw.githubusercontent.com/Nsomnia/chat-reconstructor/refs/heads/main/tests/sample-chat-session-data_chat_VibeStream_Audio_player.txt
+    ```
+2.  **Run the tool:**
+    ```bash
+    ./target/release/chat-reconstructor test_data.txt
+    ```
+This will create a `reconstructed_project` directory with the reconstructed project.
+
+## Known Issues
+
+*   The parser sometimes creates an extra file named `ImplementationCargo.toml` when it should be updating the existing `Cargo.toml`. This seems to be caused by the parser misinterpreting the context around a `Cargo.toml` code block.
+
 ## Future Development
 
-This tool was forged in the fires of a truly epic debugging session. It is battle-hardened but can always be improved. Pull requests are welcome.
+This tool was forged in the fires of a truly epic debugging session. It is battle-hardened but can always be improved. Check out the [TODO.md](TODO.md) file for a list of planned features and bug fixes.
 
-*   **Support for JSON Logs:** Add a parser for the single-line, minified JSON format that some LLMs export.
-*   **More File-Type Heuristics:** Implement intelligent, section-aware patching for other common config files (`package.json`, `pom.xml`, etc.).
-*   **Dry Run Mode:** Add a `--dry-run` flag to show what changes *would* be made without actually touching the filesystem.
-*   **Direct API Integration:** A future version could bypass the file export entirely and pull conversation history directly from LLM APIs.
+## Contributing
+
+Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
+
+Please make sure to update tests as appropriate.
 
 ## License
 
